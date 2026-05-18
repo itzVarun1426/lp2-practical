@@ -1,0 +1,441 @@
+# Installation and Configuration of Virtualization Using KVM on Ubuntu
+
+## Aim
+
+To install and configure KVM (Kernel-based Virtual Machine) virtualization on Ubuntu and create/manage virtual machines.
+
+---
+
+# What is KVM?
+
+KVM (Kernel-based Virtual Machine) is a virtualization technology built into the Linux kernel that allows Ubuntu to run multiple virtual machines.
+
+KVM works with:
+
+* QEMU → hardware emulation
+* libvirt → VM management
+* virt-manager → graphical interface
+
+---
+
+# Step 1: Check Hardware Virtualization Support
+
+Open terminal and run:
+
+```bash
+egrep -c '(vmx|svm)' /proc/cpuinfo
+```
+
+## Output
+
+* 0 → Virtualization NOT supported/enabled
+* 1 or more → Supported
+
+---
+
+# Step 2: Check if KVM is Supported
+
+```bash
+sudo apt update
+sudo apt install cpu-checker -y
+```
+
+Now run:
+
+```bash
+kvm-ok
+```
+
+## Expected Output
+
+```bash
+INFO: /dev/kvm exists
+KVM acceleration can be used
+```
+
+---
+
+# Step 3: Install KVM and Required Packages
+
+Install all required packages:
+
+```bash
+sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager -y
+```
+
+## Package Purpose
+
+| Package               | Purpose                     |
+| --------------------- | --------------------------- |
+| qemu-kvm              | Main virtualization package |
+| libvirt-daemon-system | Virtualization service      |
+| libvirt-clients       | VM management tools         |
+| bridge-utils          | Network bridge support      |
+| virt-manager          | GUI for managing VMs        |
+
+---
+
+# Step 4: Verify Installation
+
+Check KVM modules:
+
+```bash
+lsmod | grep kvm
+```
+
+## Intel Output Example
+
+```bash
+kvm_intel
+kvm
+```
+
+## AMD Output Example
+
+```bash
+kvm_amd
+kvm
+```
+
+---
+
+# Step 5: Start and Enable libvirtd Service
+
+```bash
+sudo systemctl enable --now libvirtd
+```
+
+Check status:
+
+```bash
+sudo systemctl status libvirtd
+```
+
+## Expected State
+
+```bash
+active (running)
+```
+
+---
+
+# Step 6: Add User to Required Groups
+
+```bash
+sudo usermod -aG libvirt $USER
+sudo usermod -aG kvm $USER
+```
+
+Apply changes:
+
+```bash
+newgrp libvirt
+```
+
+OR logout and login again.
+
+---
+
+# Step 7: Verify Virtualization Connection
+
+```bash
+virsh list --all
+```
+
+If successful:
+
+```bash
+ Id   Name   State
+--------------------
+```
+
+---
+
+# Step 8: Launch Virtual Machine Manager (GUI)
+
+Run:
+
+```bash
+virt-manager
+```
+
+This opens the graphical VM manager.
+
+---
+
+# Step 9: Create a Virtual Machine
+
+## Requirements
+
+* Ubuntu ISO / Windows ISO
+* Minimum:
+
+  * 2 GB RAM
+  * 20 GB storage
+
+## Steps in virt-manager
+
+1. Open Virtual Machine Manager
+2. Click Create a new virtual machine
+3. Select Local install media
+4. Browse ISO file
+5. Allocate RAM and CPU
+6. Create virtual disk
+7. Finish setup
+
+---
+
+# Step 10: Create VM Using Command Line (Optional)
+
+```bash
+virt-install \
+--name ubuntu-vm \
+--ram 2048 \
+--vcpus 2 \
+--disk path=/var/lib/libvirt/images/ubuntu-vm.qcow2,size=20 \
+--os-variant ubuntu22.04 \
+--cdrom /home/user/ubuntu.iso \
+--network network=default \
+--graphics spice
+```
+
+---
+
+# Step 11: Check Running Virtual Machines
+
+```bash
+virsh list
+```
+
+All VMs:
+
+```bash
+virsh list --all
+```
+
+---
+
+# Step 12: Start and Shutdown VM
+
+## Start VM
+
+```bash
+virsh start ubuntu-vm
+```
+
+## Shutdown VM
+
+```bash
+virsh shutdown ubuntu-vm
+```
+
+## Force Stop VM
+
+```bash
+virsh destroy ubuntu-vm
+```
+
+---
+
+# Step 13: Autostart VM
+
+```bash
+virsh autostart ubuntu-vm
+```
+
+---
+
+# Step 14: Network Verification
+
+Check default network:
+
+```bash
+virsh net-list --all
+```
+
+Start network if inactive:
+
+```bash
+virsh net-start default
+```
+
+Enable at boot:
+
+```bash
+virsh net-autostart default
+```
+
+---
+
+# Common Errors and Solutions
+
+## Error 1: KVM acceleration cannot be used
+
+### Error
+
+```bash
+KVM acceleration cannot be used
+```
+
+### Cause
+
+Virtualization disabled in BIOS.
+
+### Solution
+
+1. Restart PC
+2. Open BIOS/UEFI
+3. Enable:
+
+   * Intel VT-x
+   * AMD-V
+
+Save and reboot.
+
+---
+
+## Error 2: Permission Denied for /dev/kvm
+
+### Error
+
+```bash
+Could not access KVM kernel module
+Permission denied
+```
+
+### Solution
+
+```bash
+sudo usermod -aG kvm $USER
+```
+
+Then logout/login.
+
+---
+
+## Error 3: virt-manager not opening
+
+### Solution
+
+Install GUI dependencies:
+
+```bash
+sudo apt install virt-manager -y
+```
+
+If using server without GUI:
+
+```bash
+sudo apt install ubuntu-desktop -y
+```
+
+---
+
+## Error 4: libvirtd service failed
+
+### Check Logs
+
+```bash
+sudo journalctl -xe
+```
+
+Restart service:
+
+```bash
+sudo systemctl restart libvirtd
+```
+
+Enable service:
+
+```bash
+sudo systemctl enable libvirtd
+```
+
+---
+
+## Error 5: Failed to connect socket to '/var/run/libvirt/libvirt-sock'
+
+### Solution
+
+```bash
+sudo systemctl start libvirtd
+```
+
+Verify:
+
+```bash
+systemctl status libvirtd
+```
+
+---
+
+## Error 6: No active network found
+
+### Solution
+
+```bash
+virsh net-start default
+virsh net-autostart default
+```
+
+---
+
+## Error 7: Virtual machine extremely slow
+
+### Causes
+
+* Hardware virtualization disabled
+* Low RAM
+* Low CPU allocation
+
+### Solution
+
+* Enable VT-x/AMD-V
+* Increase RAM/CPU
+* Use SSD storage
+
+---
+
+## Error 8: Nested Virtualization Error
+
+Occurs when running KVM inside VMware/VirtualBox.
+
+### Solution
+
+Enable nested virtualization in host hypervisor.
+
+For VirtualBox:
+
+```bash
+VBoxManage modifyvm "VM Name" --nested-hw-virt on
+```
+
+---
+
+# Important Commands Summary
+
+| Command                   | Purpose           |
+| ------------------------- | ----------------- |
+| kvm-ok                    | Check KVM support |
+| virsh list --all          | List VMs          |
+| virt-manager              | Open GUI          |
+| virsh start vmname        | Start VM          |
+| virsh shutdown vmname     | Shutdown VM       |
+| systemctl status libvirtd | Check service     |
+| virsh net-list --all      | Check networks    |
+
+---
+
+# Advantages of KVM
+
+* Open source
+* High performance
+* Secure virtualization
+* Supports Linux and Windows guests
+* Easy management with virt-manager
+
+---
+
+# Conclusion
+
+KVM is a powerful Linux virtualization solution integrated directly into the kernel. By installing QEMU, libvirt, and virt-manager, Ubuntu can efficiently create and manage virtual machines using both command-line and graphical tools.

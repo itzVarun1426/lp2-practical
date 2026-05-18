@@ -1,0 +1,258 @@
+# Simplest Server Hosting on EC2 Using Apache
+
+
+# Step 1: Connect to EC2 Instance
+
+Open terminal in the folder containing your .pem key file and run:
+
+```bash
+ssh -i mykey.pem ubuntu@YOUR_PUBLIC_IP
+```
+
+Example:
+
+```bash
+ssh -i mykey.pem ubuntu@13.233.xxx.xxx
+```
+
+---
+
+# Step 2: Install Apache Web Server
+
+Update packages:
+
+```bash
+sudo apt update
+```
+
+Install Apache:
+
+```bash
+sudo apt install apache2 -y
+```
+
+---
+
+# Step 3: Start and Enable Apache
+
+Start Apache:
+
+```bash
+sudo systemctl start apache2
+```
+
+Enable Apache at boot:
+
+```bash
+sudo systemctl enable apache2
+```
+
+---
+
+# Step 4: Configure Security Group
+
+In AWS EC2 Console:
+
+1. Open EC2 Dashboard
+2. Select your instance
+3. Open Security tab
+4. Click Security Groups
+5. Edit Inbound Rules
+6. Add Rule:
+
+| Type | Port | Source   |
+| ---- | ---- | -------- |
+| HTTP | 80   | Anywhere |
+
+Save rules.
+
+---
+
+# Step 5: Test Apache Server
+
+Open browser and enter:
+
+```text
+http://YOUR_PUBLIC_IP
+```
+
+Example:
+
+```text
+http://13.233.xxx.xxx
+```
+
+If the Apache default page appears, the server is working successfully.
+
+---
+
+# Step 6: Host Your Own Website
+
+Move to Apache web directory:
+
+```bash
+cd /var/www/html
+```
+
+Remove default Apache page:
+
+```bash
+sudo rm index.html
+```
+
+Create your own HTML page:
+
+```bash
+sudo nano index.html
+```
+
+Example HTML:
+
+```html
+<h1>Hello from EC2 Server</h1>
+```
+
+Save file:
+
+* CTRL + O
+* Press Enter
+* CTRL + X
+
+---
+
+# Step 7: Open Website in Browser
+
+Open:
+
+```text
+http://YOUR_PUBLIC_IP
+```
+
+Your custom webpage will appear.
+
+---
+
+# Important Apache Commands
+
+## Restart Apache
+
+```bash
+sudo systemctl restart apache2
+```
+
+## Stop Apache
+
+```bash
+sudo systemctl stop apache2
+```
+
+## Check Apache Status
+
+```bash
+sudo systemctl status apache2
+```
+
+---
+
+# Website Storage Location
+
+All website files are stored inside:
+
+```bash
+/var/www/html
+```
+
+You can place:
+
+* HTML files
+* CSS files
+* JavaScript files
+* Images
+
+inside this folder.
+
+---
+
+# Common Errors and Solutions
+
+## Error 1: Website Not Opening
+
+### Cause
+
+HTTP port not allowed in Security Group.
+
+### Solution
+
+Add inbound rule:
+
+| Type | Port |
+| ---- | ---- |
+| HTTP | 80   |
+
+---
+
+## Error 2: Permission Denied While Editing Files
+
+### Solution
+
+Use sudo:
+
+```bash
+sudo nano index.html
+```
+
+---
+
+## Error 3: Apache Service Failed
+
+### Check Status
+
+```bash
+sudo systemctl status apache2
+```
+
+### Restart Apache
+
+```bash
+sudo systemctl restart apache2
+```
+
+---
+
+## Error 4: SSH Connection Timeout
+
+### Cause
+
+Port 22 not allowed.
+
+### Solution
+
+Add SSH rule in Security Group:
+
+| Type | Port |
+| ---- | ---- |
+| SSH  | 22   |
+
+---
+
+# Final Flow
+
+```text
+Create EC2 Instance
+↓
+Connect using SSH
+↓
+Install Apache
+↓
+Put HTML files in /var/www/html
+↓
+Open Public IP in Browser
+↓
+Website Hosted Successfully
+```
+
+---
+
+# Conclusion
+
+Apache web server can be easily installed on an AWS EC2 Ubuntu instance to host static websites. By configuring the security group and placing website files in the Apache web directory, users can successfully deploy and access websites through a public IP address.
